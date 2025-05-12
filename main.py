@@ -74,7 +74,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 if __name__ == "__main__":
     # Check if port is provided as an environment variable
-    port = int(os.getenv("PORT", 8081))
+    port = int(os.getenv("PORT", 8082))
     
     print(f"Starting Medical Clinic AI Agent on port {port}...")
     print(f"Documentation available at http://localhost:{port}/docs")

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Clinic AI Assistant</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .chat-container {
+            display: flex;
+            gap: 20px;
+        }
+        .settings-panel {
+            width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .chat-panel {
+            flex: 1;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+        .chat-history {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #eee;
+        }
+        .chat-input {
+            padding: 15px;
+            display: flex;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .chat-input button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .chat-input button:hover {
+            background-color: #2980b9;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        .user-message {
+            background-color: #3498db;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .assistant-message {
+            background-color: #f1f1f1;
+            color: #333;
+            align-self: flex-start;
+        }
+        .message-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .action-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .action-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        .patient-info, .appointment-info, .medication-info {
+            margin-top: 10px;
+        }
+        .info-item {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        .info-label {
+            font-weight: bold;
+            width: 150px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .error {
+            color: #e74c3c;
+            padding: 10px;
+            background-color: #fadbd8;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Medical Clinic AI Assistant</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="chat-container">
+            <div class="settings-panel">
+                <h2>Settings</h2>
+                
+                <div class="form-group">
+                    <label for="user-type">User Type</label>
+                    <select id="user-type">
+                        <option value="doctor">Doctor</option>
+                        <option value="patient">Patient</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="user-id">User ID</label>
+                    <input type="text" id="user-id" value="doctor@clinic.com" placeholder="Enter user ID">
+                </div>
+                
+                <div class="form-group">
+                    <label for="api-key">API Key</label>
+                    <input type="text" id="api-key" value="1" placeholder="Enter API key">
+                </div>
+                
+                <button id="new-session-btn" style="width: 100%; padding: 10px; background-color: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px;">
+                    Start New Session
+                </button>
+                
+                <div id="session-info" style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 4px;">
+                    <p><strong>Session ID:</strong> <span id="session-id">Not started</span></p>
+                </div>
+                
+                <div id="suggestions" style="margin-top: 20px;">
+                    <h3>Sample Questions</h3>
+                    <div id="doctor-suggestions" style="display: block;">
+                        <button class="suggestion-btn">Show me Jane Doe's information</button>
+                        <button class="suggestion-btn">What are my appointments today?</button>
+                        <button class="suggestion-btn">Show me any missed appointments</button>
+                        <button class="suggestion-btn">What medications is Jane taking?</button>
+                    </div>
+                    <div id="patient-suggestions" style="display: none;">
+                        <button class="suggestion-btn">When is my next appointment?</button>
+                        <button class="suggestion-btn">What medications am I taking?</button>
+                        <button class="suggestion-btn">What allergies do I have?</button>
+                        <button class="suggestion-btn">Can I schedule an appointment?</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-panel">
+                <div class="chat-history" id="chat-history">
+                    <div class="message-container">
+                        <div class="message assistant-message">
+                            Welcome to the Medical Clinic AI Assistant. How can I help you today?
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input">
+                    <input type="text" id="user-message" placeholder="Type your message here..." disabled>
+                    <button id="send-btn" disabled>Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const userTypeSelect = document.getElementById('user-type');
+        const userIdInput = document.getElementById('user-id');
+        const apiKeyInput = document.getElementById('api-key');
+        const newSessionBtn = document.getElementById('new-session-btn');
+        const sessionIdSpan = document.getElementById('session-id');
+        const chatHistory = document.getElementById('chat-history');
+        const userMessageInput = document.getElementById('user-message');
+        const sendBtn = document.getElementById('send-btn');
+        const doctorSuggestions = document.getElementById('doctor-suggestions');
+        const patientSuggestions = document.getElementById('patient-suggestions');
+        
+        // State
+        let currentSessionId = null;
+        const apiUrl = window.location.protocol + '//' + window.location.host + '/api/ai';
+        
+        // Event Listeners
+        userTypeSelect.addEventListener('change', updateUserIdPlaceholder);
+        newSessionBtn.addEventListener('click', createNewSession);
+        sendBtn.addEventListener('click', sendMessage);
+        userMessageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Add click handlers to suggestion buttons
+        document.querySelectorAll('.suggestion-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                userMessageInput.value = this.textContent;
+                sendMessage();
+            });
+        });
+        
+        // Functions
+        function updateUserIdPlaceholder() {
+            const userType = userTypeSelect.value;
+            if (userType === 'doctor') {
+                userIdInput.value = 'doctor@clinic.com';
+                doctorSuggestions.style.display = 'block';
+                patientSuggestions.style.display = 'none';
+            } else {
+                userIdInput.value = 'patient@example.com';
+                doctorSuggestions.style.display = 'none';
+                patientSuggestions.style.display = 'block';
+            }
+        }
+        
+        async function createNewSession() {
+            const userType = userTypeSelect.value;
+            const userId = userIdInput.value;
+            const apiKey = apiKeyInput.value;
+            
+            if (!userId) {
+                alert('Please enter a user ID');
+                return;
+            }
+            
+            try {
+                addMessage('Creating new session...', 'assistant');
+                
+                const response = await fetch(`${apiUrl}/sessions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'api-key': apiKey
+                    },
+                    body: JSON.stringify({
+                        metadata: { name: userId }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to create session: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                currentSessionId = data.session_id;
+                sessionIdSpan.textContent = currentSessionId;
+                
+                // Enable chat
+                userMessageInput.disabled = false;
+                sendBtn.disabled = false;
+                
+                addMessage('Session created! You can now start chatting.', 'assistant');
+            } catch (error) {
+                addError(`Error creating session: ${error.message}`);
+                console.error('Error creating session:', error);
+            }
+        }
+        
+        async function sendMessage() {
+            const message = userMessageInput.value.trim();
+            if (!message || !currentSessionId) return;
+            
+            // Clear input
+            userMessageInput.value = '';
+            
+            // Add user message to chat
+            addMessage(message, 'user');
+            
+            // Add loading indicator
+            const loadingElement = document.createElement('div');
+            loadingElement.className = 'loading';
+            loadingElement.textContent = 'Assistant is typing...';
+            chatHistory.appendChild(loadingElement);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            
+            try {
+                const userType = userTypeSelect.value;
+                const userId = userIdInput.value;
+                const apiKey = apiKeyInput.value;
+                
+                const response = await fetch(`${apiUrl}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'api-key': apiKey
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: currentSessionId
+                    })
+                });
+                
+                // Remove loading indicator
+                chatHistory.removeChild(loadingElement);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to send message: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Add assistant message to chat
+                addMessage(data.message, 'assistant');
+                
+                // Handle actions if any
+                if (data.actions && data.actions.length > 0) {
+                    handleActions(data.actions);
+                }
+            } catch (error) {
+                // Remove loading indicator if still there
+                if (chatHistory.contains(loadingElement)) {
+                    chatHistory.removeChild(loadingElement);
+                }
+                
+                addError(`Error: ${error.message}`);
+                console.error('Error sending message:', error);
+            }
+        }
+        
+        function addMessage(text, sender) {
+            const messageContainer = document.createElement('div');
+            messageContainer.className = 'message-container';
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${sender}-message`;
+            messageElement.textContent = text;
+            
+            messageContainer.appendChild(messageElement);
+            chatHistory.appendChild(messageContainer);
+            
+            // Scroll to bottom
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+        
+        function addError(text) {
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error';
+            errorElement.textContent = text;
+            chatHistory.appendChild(errorElement);
+            
+            // Scroll to bottom
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+        
+        function handleActions(actions) {
+            actions.forEach(action => {
+                const actionPanel = document.createElement('div');
+                actionPanel.className = 'action-panel';
+                
+                const actionTitle = document.createElement('div');
+                actionTitle.className = 'action-title';
+                
+                const actionContent = document.createElement('div');
+                
+                switch (action.type) {
+                    case 'display_patient_info':
+                        actionTitle.textContent = 'Patient Information';
+                        actionContent.innerHTML = createPatientInfoHTML(action.data);
+                        break;
+                        
+                    case 'display_appointments':
+                        actionTitle.textContent = 'Appointments';
+                        actionContent.innerHTML = createAppointmentsHTML(action.data);
+                        break;
+                        
+                    case 'display_medications':
+                        actionTitle.textContent = 'Medications';
+                        actionContent.innerHTML = createMedicationsHTML(action.data);
+                        break;
+                        
+                    case 'display_test_results':
+                        actionTitle.textContent = 'Test Results';
+                        actionContent.innerHTML = createTestResultsHTML(action.data);
+                        break;
+                        
+                    case 'display_schedule':
+                        actionTitle.textContent = 'Schedule';
+                        actionContent.innerHTML = createScheduleHTML(action.data);
+                        break;
+                        
+                    case 'display_missed_appointments':
+                        actionTitle.textContent = 'Missed Appointments';
+                        actionContent.innerHTML = createMissedAppointmentsHTML(action.data);
+                        break;
+                        
+                    default:
+                        actionTitle.textContent = action.type;
+                        actionContent.textContent = JSON.stringify(action.data, null, 2);
+                }
+                
+                actionPanel.appendChild(actionTitle);
+                actionPanel.appendChild(actionContent);
+                chatHistory.appendChild(actionPanel);
+                
+                // Scroll to bottom
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            });
+        }
+        
+        function createPatientInfoHTML(data) {
+            const basicInfo = data.basic_info || data;
+            const allergies = data.allergies || [];
+            const medications = data.medications || [];
+            
+            let html = '<div class="patient-info">';
+            
+            // Basic Info
+            html += `
+                <div class="info-item"><span class="info-label">Name:</span> ${basicInfo.first_name} ${basicInfo.last_name}</div>
+                <div class="info-item"><span class="info-label">DOB:</span> ${basicInfo.date_of_birth}</div>
+                <div class="info-item"><span class="info-label">Gender:</span> ${basicInfo.gender}</div>
+                <div class="info-item"><span class="info-label">Email:</span> ${basicInfo.email}</div>
+                <div class="info-item"><span class="info-label">Phone:</span> ${basicInfo.phone}</div>
+            `;
+            
+            // Allergies
+            if (allergies.length > 0) {
+                html += '<div class="info-item"><span class="info-label">Allergies:</span> ';
+                if (typeof allergies === 'string') {
+                    try {
+                        const parsedAllergies = JSON.parse(allergies);
+                        html += Array.isArray(parsedAllergies) ? parsedAllergies.join(', ') : allergies;
+                    } catch (e) {
+                        html += allergies;
+                    }
+                } else if (Array.isArray(allergies)) {
+                    html += allergies.join(', ');
+                } else {
+                    html += 'None';
+                }
+                html += '</div>';
+            }
+            
+            // Medications
+            if (medications.length > 0) {
+                html += '<div class="info-item"><span class="info-label">Medications:</span> ';
+                if (typeof medications === 'string') {
+                    try {
+                        const parsedMedications = JSON.parse(medications);
+                        html += Array.isArray(parsedMedications) ? parsedMedications.join(', ') : medications;
+                    } catch (e) {
+                        html += medications;
+                    }
+                } else if (Array.isArray(medications)) {
+                    html += medications.join(', ');
+                } else {
+                    html += 'None';
+                }
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            return html;
+        }
+        
+        function createAppointmentsHTML(appointments) {
+            if (!Array.isArray(appointments) || appointments.length === 0) {
+                return '<div>No missed appointments found.</div>';
+            }
+            
+            let html = '<div class="missed-appointments-list">';
+            
+            appointments.forEach((appointment, index) => {
+                const date = new Date(appointment.date_time);
+                const formattedDate = date.toLocaleDateString();
+                const formattedTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                html += `
+                    <div class="appointment-info" style="margin-bottom: 15px; ${index < appointments.length - 1 ? 'border-bottom: 1px solid #eee; padding-bottom: 10px;' : ''}">
+                        <div class="info-item"><span class="info-label">Date:</span> ${formattedDate}</div>
+                        <div class="info-item"><span class="info-label">Time:</span> ${formattedTime}</div>
+                        <div class="info-item"><span class="info-label">Patient:</span> ${appointment.patient_name || 'Unknown'}</div>
+                        <div class="info-item"><span class="info-label">Type:</span> ${appointment.appointment_type || 'Regular'}</div>
+                        ${appointment.notes ? `<div class="info-item"><span class="info-label">Notes:</span> ${appointment.notes}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+        
+        // Initialize
+        updateUserIdPlaceholder();
+    </script>
+</body>
+</html>
+(appointments) || appointments.length === 0) {
+                return '<div>No appointments found.</div>';
+            }
+            
+            let html = '<div class="appointments-list">';
+            
+            appointments.forEach((appointment, index) => {
+                const date = new Date(appointment.date_time);
+                const formattedDate = date.toLocaleDateString();
+                const formattedTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                html += `
+                    <div class="appointment-info" style="margin-bottom: 15px; ${index < appointments.length - 1 ? 'border-bottom: 1px solid #eee; padding-bottom: 10px;' : ''}">
+                        <div class="info-item"><span class="info-label">Date:</span> ${formattedDate}</div>
+                        <div class="info-item"><span class="info-label">Time:</span> ${formattedTime}</div>
+                        <div class="info-item"><span class="info-label">Status:</span> ${appointment.status || 'Scheduled'}</div>
+                        <div class="info-item"><span class="info-label">Doctor:</span> ${appointment.doctor_name || 'Unknown'}</div>
+                        <div class="info-item"><span class="info-label">Type:</span> ${appointment.appointment_type || 'Regular'}</div>
+                        ${appointment.notes ? `<div class="info-item"><span class="info-label">Notes:</span> ${appointment.notes}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+        
+        function createMedicationsHTML(medications) {
+            if (!medications || (Array.isArray(medications) && medications.length === 0)) {
+                return '<div>No medications found.</div>';
+            }
+            
+            let medicationsList = medications;
+            
+            // Handle string format (JSON)
+            if (typeof medications === 'string') {
+                try {
+                    medicationsList = JSON.parse(medications);
+                } catch (e) {
+                    medicationsList = [medications];
+                }
+            }
+            
+            if (!Array.isArray(medicationsList)) {
+                medicationsList = [medicationsList];
+            }
+            
+            let html = '<div class="medications-list">';
+            
+            medicationsList.forEach((medication, index) => {
+                html += `
+                    <div class="medication-info" style="margin-bottom: 5px;">
+                        • ${medication}
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+        
+        function createTestResultsHTML(data) {
+            if (!data.results || data.results.length === 0) {
+                return '<div>No test results found.</div>';
+            }
+            
+            let html = `<div class="test-results-list">`;
+            
+            if (data.patient) {
+                html += `<div style="margin-bottom: 10px;"><strong>Patient:</strong> ${data.patient}</div>`;
+            }
+            
+            data.results.forEach((result, index) => {
+                html += `
+                    <div class="test-result-info" style="margin-bottom: 15px; ${index < data.results.length - 1 ? 'border-bottom: 1px solid #eee; padding-bottom: 10px;' : ''}">
+                        <div class="info-item"><span class="info-label">Date:</span> ${result.date || 'Unknown'}</div>
+                        ${result.doctor ? `<div class="info-item"><span class="info-label">Doctor:</span> ${result.doctor}</div>` : ''}
+                `;
+                
+                if (result.results) {
+                    html += `<div class="info-item"><span class="info-label">Results:</span></div>`;
+                    html += `<div style="margin-left: 20px; margin-top: 5px;">`;
+                    
+                    if (typeof result.results === 'string') {
+                        html += result.results;
+                    } else if (typeof result.results === 'object') {
+                        Object.entries(result.results).forEach(([key, value]) => {
+                            html += `<div>${key}: ${value}</div>`;
+                        });
+                    }
+                    
+                    html += `</div>`;
+                }
+                
+                html += `</div>`;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+        
+        function createScheduleHTML(appointments) {
+            if (!Array.isArray(appointments) || appointments.length === 0) {
+                return '<div>No appointments scheduled.</div>';
+            }
+            
+            // Sort appointments by date
+            appointments.sort((a, b) => new Date(a.date_time) - new Date(b.date_time));
+            
+            let html = '<div class="schedule-list">';
+            
+            // Group by date
+            const groupedByDate = {};
+            
+            appointments.forEach(appointment => {
+                const date = new Date(appointment.date_time);
+                const dateStr = date.toLocaleDateString();
+                
+                if (!groupedByDate[dateStr]) {
+                    groupedByDate[dateStr] = [];
+                }
+                
+                groupedByDate[dateStr].push(appointment);
+            });
+            
+            // Create HTML for each date
+            Object.entries(groupedByDate).forEach(([date, appts]) => {
+                html += `<div style="margin-bottom: 15px;"><strong>${date}</strong></div>`;
+                
+                appts.forEach(appointment => {
+                    const time = new Date(appointment.date_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    html += `
+                        <div class="appointment-info" style="margin-bottom: 10px; margin-left: 15px;">
+                            <div class="info-item"><span class="info-label">Time:</span> ${time}</div>
+                            <div class="info-item"><span class="info-label">Patient:</span> ${appointment.patient_name || 'Unknown'}</div>
+                            <div class="info-item"><span class="info-label">Type:</span> ${appointment.appointment_type || 'Regular'}</div>
+                            ${appointment.notes ? `<div class="info-item"><span class="info-label">Notes:</span> ${appointment.notes}</div>` : ''}
+                     docs#/default/create_session_api_ai_sessions_post   </div>
+                    `;
+                });
+            });
+            
+            html += '</div>';
+            return html;
+        }
+        
+        function createMissedAppointmentsHTML(appointments) {
+            if (!Array.isArray
