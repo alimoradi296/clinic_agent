@@ -1,2 +1,8 @@
 __pycache__/
 .env
+Makefile
+build_docs.sh
+docs/
+serve_docs.sh
+setup_docs.sh
+update_docs.sh
